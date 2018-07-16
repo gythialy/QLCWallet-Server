@@ -1,0 +1,28 @@
+{
+  "name": "qlcwallet-server",
+  "version": "1.0.0",
+  "description": "QLCChain online wallet",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "QLCChain Authors",
+  "license": "MIT",
+  "dependencies": {
+    "body-parser": "^1.18.2",
+    "cors": "^2.8.4",
+    "dotenv": "^6.0.0",
+    "express": "^4.16.2",
+    "knex": "^0.15.1",
+    "pg": "^7.4.1",
+    "redis": "^2.8.0",
+    "request": "^2.83.0",
+    "request-promise-native": "^1.0.5",
+    "uws": "^10.148.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gythialy/qlcwallet-server.git"
+  }
+}
