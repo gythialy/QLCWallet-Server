@@ -40,7 +40,7 @@ docker container run -d --name qlcwallet-server \
 ### 通过 docker-compose 启动
 
 - 安装 docker-compse
-- 修改 PostgreSQL 密码，在 docker-compose.yml#L14 行， `POSTGRES_PASSWORD=SHOULD_BE_CHANGED`
-- 修改 `wallet-server/.env`#L9 行中登录信息 `DB_PASS=SHOULD_BE_CHANGED` （需要与上一步中密码保持一致）
+- 修改 PostgreSQL 密码，在 [docker-compose.yml#L14](docker/docker-compose/docker-compose.yml#L14)行， `POSTGRES_PASSWORD=SHOULD_BE_CHANGED`
+- 修改 [wallet-server/.env#L9](docker/docker-compose/wallet-server/.env#L9) 行中登录信息 `DB_PASS=SHOULD_BE_CHANGED` （需要与上一步中密码保持一致）
 - 启动所有容器 `docker-compose up -d`
 - 停止并删除所有容器 `docker-compose down -v`
