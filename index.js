@@ -3,8 +3,8 @@ const timestamps = require('./timestamps');
 timestamps.createTimestampTable();
 
 /** Configuration **/
-const nanoNodeUrl = process.env.NANO_NODE_URL || `http://qlc_node:29735`; // Nano node RPC url
-const nanoWorkNodeUrl = process.env.NANO_WORK_NODE_URL || `http://qlc_node:29735`; // Nano work node RPC url
+const qlcNodeUrl = process.env.QLC_NODE_URL || `http://qlc_node:29735`; // Nano node RPC url
+const qlcWorkNodeUrl = process.env.QLC_WORK_NODE_URL || `http://qlc_node:29735`; // Nano work node RPC url
 const listeningPort = process.env.APP_PORT || 8888; // Port this app will listen on
 const websocketPort = process.env.WEB_SOCKET_PORT || 3333;
 const webserverPort = process.env.RPC_CALLBACK_PORT || 8889;
@@ -90,7 +90,7 @@ app.post('/api/node-api', async (req, res) => {
   // Send the request to the Nano node and return the response
   request({
       method: 'post',
-      uri: (workRequest || representativeRequest) ? nanoWorkNodeUrl : nanoNodeUrl,
+      uri: (workRequest || representativeRequest) ? qlcWorkNodeUrl : qlcNodeUrl,
       body: req.body,
       json: true
     })

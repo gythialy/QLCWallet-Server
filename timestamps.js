@@ -91,7 +91,7 @@ async function createTimestampTable() {
       }
     })
     .catch(err => {
-      console.log('error !!!', err.message, err.stack)
+      console.log('create table error !!!', err.message, err.stack)
     });
 }
 
