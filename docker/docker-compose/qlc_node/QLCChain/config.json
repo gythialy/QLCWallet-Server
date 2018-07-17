@@ -1,0 +1,66 @@
+{
+    "version": "2",
+    "rpc_enable": "true",
+    "rpc": {
+        "address": "::ffff:127.0.0.1",
+        "port": "29735",
+        "enable_control": "true",
+        "frontier_request_limit": "16384",
+        "chain_request_limit": "16384"
+    },
+    "node": {
+        "version": "12",
+        "peering_port": "29734",
+        "bootstrap_fraction_numerator": "1",
+        "receive_minimum": "1000000000000000000000000",
+        "logging": {
+            "version": "3",
+            "ledger": "false",
+            "ledger_duplicate": "false",
+            "vote": "false",
+            "network": "true",
+            "network_message": "false",
+            "network_publish": "false",
+            "network_packet": "false",
+            "network_keepalive": "false",
+            "node_lifetime_tracing": "false",
+            "insufficient_work": "true",
+            "log_rpc": "true",
+            "bulk_pull": "false",
+            "smart_contract": "true",
+            "work_generation_time": "true",
+            "log_to_cerr": "false",
+            "max_size": "16777216",
+            "rotation_size": "4194304",
+            "flush": "true"
+        },
+        "work_peers": "",
+        "preconfigured_peers": [
+            "qlcChain.online",
+            "node1.qlcChain.online"
+        ],
+        "preconfigured_representatives": [
+            "qlc_16s9kn7qmjx3jjiw6td7wbth95ifjjirsqdkqady15jh8scww4urw6gg8zd5"
+        ],
+        "online_weight_minimum": "60000000000000000000000000000000000000",
+        "online_weight_quorum": "50",
+        "password_fanout": "1024",
+        "io_threads": "8",
+        "work_threads": "8",
+        "enable_voting": "true",
+        "bootstrap_connections": "4",
+        "bootstrap_connections_max": "64",
+        "callback_address": "qlc_wallet_server",
+        "callback_port": "8889",
+        "callback_target": "/api/new-block",
+        "lmdb_max_dbs": "128",
+        "state_block_parse_canary": "89F1C0AC4C5AD23964AB880571E3EA67FDC41BD11AB20E67F0A29CF94CD4E24A",
+        "state_block_generate_canary": "B6DC4D64801BEC7D81DAA086A5733D251E8CBA0E9226FD6173D97C0569EC2998"
+    },
+    "opencl_enable": "false",
+    "opencl": {
+        "platform": "0",
+        "device": "0",
+        "threads": "1048576"
+    }
+}

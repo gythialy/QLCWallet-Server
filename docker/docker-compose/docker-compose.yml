@@ -1,0 +1,76 @@
+version: "3.5"
+
+services:
+  postgresql:
+    image: postgres:alpine
+    container_name: postgresql
+    ports:
+      - "127.0.0.1:5432:5432"
+    networks:
+      - backend
+    environment:
+      - POSTGRES_USER=qlc
+      - POSTGRES_DB=qlcwallet
+      - POSTGRES_PASSWORD=SHOULD_BE_CHANGED
+    volumes:
+      # - type: bind
+      #   source: ./mysql/conf.d
+      #   target: /etc/mysql/conf.d
+      - type: bind
+        source: ./postgresql/data
+        target: /var/lib/postgresql/data
+    secrets:
+      - db_root_password
+    restart: always
+
+  redis:
+    image: redis:alpine
+    container_name: redis
+    ports:
+      - "127.0.0.1:6379:6379"
+    networks:
+      - backend
+    restart: always
+
+  qlcchain_node:
+    image: qlcchain-node:latest
+    container_name: qlcchain_node
+    ports:
+      - "29734:29734/udp"
+      - "127.0.0.1:29735:29735"
+    networks:
+      - frontend
+    volumes:
+      - type: bind
+        source: ./qlc_node/QLCChain
+        target: /root/QLCChain
+    restart: always
+
+  qlc_wallet_server:
+    image: qlcwallet-server:latest
+    container_name: qlc_wallet_server
+    ports:
+      - "8888:8888"
+      - "127.0.0.1:8889:8889"
+    networks:
+      - frontend
+      - backend
+    volumes:
+      - type: bind
+        source: ./wallet-server/.env
+        target: /app/config/.env
+    depends_on: 
+        - postgresql
+        - redis
+        - qlcchain_node
+    restart: always
+
+secrets:
+  db_root_password:
+    file: ./postgresql/db_secret.txt
+
+networks:
+  frontend:
+    name: qlcwallet-front-end
+  backend:
+    name: qlcwallet-backend
