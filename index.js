@@ -1,5 +1,6 @@
 require('dotenv').config()
 const timestamps = require('./timestamps');
+timestamps.createTimestampTable();
 
 /** Configuration **/
 const nanoNodeUrl = process.env.NANO_NODE_URL || `http://qlc_node:29735`; // Nano node RPC url
@@ -16,7 +17,9 @@ const memoryCacheLength = 800; // How much work to store in memory (If used)
 const express = require('express');
 const request = require('request-promise-native');
 const cors = require('cors');
-const { promisify } = require('util');
+const {
+  promisify
+} = require('util');
 
 const workCache = [];
 let getCache, putCache;
@@ -51,7 +54,9 @@ app.post('/api/node-api', async (req, res) => {
     'tokens',
   ];
   if (!req.body.action || allowedActions.indexOf(req.body.action) === -1) {
-    return res.status(500).json({ error: `Action ${req.body.action} not allowed` });
+    return res.status(500).json({
+      error: `Action ${req.body.action} not allowed`
+    });
   }
 
   let workRequest = false;
@@ -60,11 +65,15 @@ app.post('/api/node-api', async (req, res) => {
 
   // Cache work requests
   if (req.body.action === 'work_generate') {
-    if (!req.body.hash) return res.status(500).json({ error: `Requires valid hash to perform work` });
+    if (!req.body.hash) return res.status(500).json({
+      error: `Requires valid hash to perform work`
+    });
 
     const cachedWork = useRedisCache ? await getCache(req.body.hash) : getCache(req.body.hash); // Only redis is an async operation
     if (cachedWork && cachedWork.length) {
-      return res.json({ work: cachedWork });
+      return res.json({
+        work: cachedWork
+      });
     }
     workRequest = true;
   }
@@ -79,7 +88,12 @@ app.post('/api/node-api', async (req, res) => {
   }
 
   // Send the request to the Nano node and return the response
-  request({ method: 'post', uri: (workRequest || representativeRequest) ? nanoWorkNodeUrl : nanoNodeUrl, body: req.body, json: true })
+  request({
+      method: 'post',
+      uri: (workRequest || representativeRequest) ? nanoWorkNodeUrl : nanoNodeUrl,
+      body: req.body,
+      json: true
+    })
     .then(async (proxyRes) => {
       if (proxyRes) {
         if (workRequest && proxyRes.work) {
@@ -105,7 +119,7 @@ app.post('/api/node-api', async (req, res) => {
     .catch(err => res.status(500).json(err.toString()));
 });
 
-app.listen(listeningPort, () => console.log(`App listening on port ${listeningPort}!`));
+app.listen(listeningPort, () => console.log(`QLC Wallet server listening on port ${listeningPort}!`));
 
 // Configure the cache functions to work based on if we are using redis or not
 if (useRedisCache) {
@@ -127,20 +141,21 @@ if (useRedisCache) {
   };
   putCache = (hash, work, time) => {
     if (time) return; // If a specific time is specified, don't cache at all for now
-    workCache.push({ hash, work });
-    if (workCache.length >= memoryCacheLength) workCache.shift(); // If the list is too long, prune it.
+    workCache.push({
+      hash,
+      work
+    });
+    if (workCache.length >= memoryCacheLength) {
+      workCache.shift(); // If the list is too long, prune it.
+    }
   };
 }
-
-const WebSocketServer = require('uws').Server;
-const rcp_callback_app = express();
-const wss = new WebSocketServer({ port: websocketPort });
 
 const subscriptionMap = {};
 
 // Statistics reporting?
 let tpsCount = 0;
-
+const rcp_callback_app = express();
 rcp_callback_app.use((req, res, next) => {
   if (req.headers['content-type']) return next();
   req.headers['content-type'] = 'application/json';
@@ -153,8 +168,9 @@ rcp_callback_app.post('/api/new-block', (req, res) => {
 
   const fullBlock = req.body;
   try {
-    fullBlock.block = JSON.parse(fullBlock.block);
-    saveHashTimestamp(fullBlock.hash);
+    // TODO: refine 
+    //fullBlock.block = JSON.parse(fullBlock.block);
+    timestamps.saveHashTimestamp(fullBlock.hash);
   } catch (err) {
     return console.log(`Error parsing block data! `, err.message);
   }
@@ -190,21 +206,26 @@ rcp_callback_app.get('/health-check', (req, res) => {
   res.sendStatus(200);
 });
 
-rcp_callback_app.listen(webserverPort, () => console.log(`Express server online`));
+rcp_callback_app.listen(webserverPort, () => console.log(`QLCChain RPC callback server listening on port ${webserverPort}!`));
 
-wss.on('connection', function(ws) {
+const WebSocketServer = require('uws').Server;
+const wss = new WebSocketServer({
+  port: websocketPort
+});
+
+wss.on('connection', function (ws) {
   ws.subscriptions = [];
-  console.log(`- New Connection`);
+  console.log(`WS: - New Connection`);
   ws.on('message', message => {
     try {
       const event = JSON.parse(message);
       parseEvent(ws, event);
     } catch (err) {
-      console.log(`Bad message: `, err);
+      console.log(`WS: Bad message: `, err);
     }
   });
   ws.on('close', event => {
-    console.log(`- Connection Closed`);
+    console.log(`WS: - Connection Closed`);
     ws.subscriptions.forEach(account => {
       if (!subscriptionMap[account] || !subscriptionMap[account].length) return; // Not in there for some reason?
 
@@ -216,19 +237,6 @@ wss.on('connection', function(ws) {
     });
   });
 });
-
-async function saveHashTimestamp(hash) {
-  console.log(`Saving block timestamp: `, hash);
-  const d = new Date();
-  try {
-    await knex('timestamps').insert({
-      hash,
-      timestamp: d.getTime() + (d.getTimezoneOffset() * 60 * 1000), // Get milliseconds in UTC
-    });
-  } catch (err) {
-    console.log(`Error saving hash timestamp:`, err.message, err);
-  }
-}
 
 function parseEvent(ws, event) {
   switch (event.event) {
@@ -254,6 +262,7 @@ function subscribeAccounts(ws, accounts) {
     subscriptionMap[account].push(ws);
   });
 }
+
 function unsubscribeAccounts(ws, accounts) {
   accounts.forEach(account => {
     const existingSub = ws.subscriptions.indexOf(account);
@@ -266,7 +275,7 @@ function unsubscribeAccounts(ws, accounts) {
 
     const globalIndex = subscriptionMap[account].indexOf(ws);
     if (globalIndex === -1) {
-      console.log(`Subscribe, not found in the global map?  Potential leak? `, account);
+      console.log(`WS: Subscribe, not found in the global map?  Potential leak? `, account);
       return;
     }
 
@@ -283,4 +292,4 @@ function printStats() {
 
 setInterval(printStats, statTime * 1000); // Print stats every x seconds
 
-console.log(`Websocket server online!`);
+console.log(`QLC wallet websocket server listening on port ${websocketPort}!`);

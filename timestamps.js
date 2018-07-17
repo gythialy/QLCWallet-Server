@@ -1,8 +1,11 @@
 const db = require('./db');
 
 async function getTimestamp(hash) {
-  return await db.knex('timestamps').where({ hash }).select();
+  return await db.knex('timestamps').where({
+    hash
+  }).select();
 }
+
 async function getTimestamps(hashes) {
   const returnHashes = {};
   try {
@@ -63,10 +66,41 @@ async function mapPending(nodeResult) {
   return nodeResult;
 }
 
+async function saveHashTimestamp(hash) {
+  console.log(`Saving block timestamp: `, hash);
+  const d = new Date();
+  try {
+    await db.knex('timestamps').insert({
+      hash,
+      timestamp: d.getTime() + (d.getTimezoneOffset() * 60 * 1000), // Get milliseconds in UTC
+    });
+  } catch (err) {
+    console.log(`Error saving hash timestamp:`, err.message, err);
+  }
+}
+
+async function createTimestampTable() {
+  return db.knex.schema
+    .hasTable('timestamps')
+    .then(ifExist => {
+      if (!ifExist) {
+        return db.knex.schema.createTable('timestamps', (table) => {
+          table.string('hash').notNullable();
+          table.bigInteger('timestamp');
+        })
+      }
+    })
+    .catch(err => {
+      console.log('error !!!', err.message, err.stack)
+    });
+}
+
 module.exports = {
   getTimestamp,
   getTimestamps,
   mapAccountHistory,
   mapBlocksInfo,
-  mapPending
+  mapPending,
+  saveHashTimestamp,
+  createTimestampTable
 };

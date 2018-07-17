@@ -1,7 +1,7 @@
 {
   "name": "qlcwallet-server",
   "version": "1.0.0",
-  "description": "QLCChain online wallet",
+  "description": "QLCChain Wwallet server",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
@@ -23,6 +23,6 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/gythialy/qlcwallet-server.git"
+    "url": "https://github.com/qlcchain/qlcwallet-server.git"
   }
 }
