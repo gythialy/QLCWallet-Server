@@ -1,7 +1,16 @@
-const db = require('./db');
+const knex = require('knex')({
+  client: 'pg',
+  connection: {
+    host: process.env.DB_HOST,
+    port: process.env.DB_PORT,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASS ? process.env.DB_PASS : '',
+    database: process.env.DB_NAME
+  }
+});
 
 async function getTimestamp(hash) {
-  return await db.knex('timestamps').where({
+  return await knex('timestamps').where({
     hash
   }).select();
 }
@@ -9,7 +18,7 @@ async function getTimestamp(hash) {
 async function getTimestamps(hashes) {
   const returnHashes = {};
   try {
-    const dbHashes = await db.knex('timestamps').whereIn('hash', hashes).select();
+    const dbHashes = await knex('timestamps').whereIn('hash', hashes).select();
 
     hashes.forEach(hash => {
       const dbResult = dbHashes.find(dbHash => dbHash.hash === hash);
@@ -70,7 +79,7 @@ async function saveHashTimestamp(hash) {
   console.log(`Saving block timestamp: `, hash);
   const d = new Date();
   try {
-    await db.knex('timestamps').insert({
+    await knex('timestamps').insert({
       hash,
       timestamp: d.getTime() + (d.getTimezoneOffset() * 60 * 1000), // Get milliseconds in UTC
     });
@@ -80,11 +89,11 @@ async function saveHashTimestamp(hash) {
 }
 
 async function createTimestampTable() {
-  return db.knex.schema
+  return knex.schema
     .hasTable('timestamps')
     .then(ifExist => {
       if (!ifExist) {
-        return db.knex.schema.createTable('timestamps', (table) => {
+        return knex.schema.createTable('timestamps', (table) => {
           table.string('hash').notNullable();
           table.bigInteger('timestamp');
         })
