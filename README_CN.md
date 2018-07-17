@@ -1,5 +1,7 @@
 # QLC Wallet Server
 
+QLC Chain 在线钱包，部分代码移植自 [Nanovault](https://nanovault.io/)。
+
 **[English](README.md)** **[中文](README_CN.md)**
 
 ## 编译

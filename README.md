@@ -1,5 +1,7 @@
 # QLC Wallet Server
 
+QLC Chain online wallet inspired by [Nanovault](https://nanovault.io/), some code are ported from it.
+
 **[English](README.md)** **[中文](README_CN.md)**
 
 ## Build Instructions
