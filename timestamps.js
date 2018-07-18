@@ -78,14 +78,22 @@ async function mapPending(nodeResult) {
 async function saveHashTimestamp(hash) {
   console.log(`Saving block timestamp: `, hash);
   const d = new Date();
-  try {
-    await knex('timestamps').insert({
-      hash,
-      timestamp: d.getTime() + (d.getTimezoneOffset() * 60 * 1000), // Get milliseconds in UTC
-    });
-  } catch (err) {
-    console.log(`Error saving hash timestamp:`, err.message, err);
-  }
+
+  await knex('timestamps').select()
+    .where('hash', hash)
+    .then(function (rows) {
+      if (rows.length === 0) {
+        knex('timestamps').insert({
+          hash,
+          timestamp: d.getTime() + (d.getTimezoneOffset() * 60 * 1000), // Get milliseconds in UTC
+        });
+      } else {
+        console.log(`${hash} already exist.`);
+      }
+    })
+    .catch(function (err) {
+      console.log(`Error saving hash timestamp:`, err.message, err);
+    })
 }
 
 async function createTimestampTable() {
@@ -94,7 +102,7 @@ async function createTimestampTable() {
     .then(ifExist => {
       if (!ifExist) {
         return knex.schema.createTable('timestamps', (table) => {
-          table.string('hash').notNullable();
+          table.string('hash').notNullable().primary;
           table.bigInteger('timestamp');
         })
       }

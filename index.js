@@ -37,6 +37,7 @@ app.get('/*', (req, res) => res.sendFile(`${__dirname}/static/index.html`));
 app.post('/api/node-api', async (req, res) => {
   const allowedActions = [
     'account_history',
+    'account_history_topn',
     'account_info',
     'accounts_frontiers',
     'accounts_balances',
