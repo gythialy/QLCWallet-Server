@@ -37,6 +37,7 @@ services:
     container_name: qlcchain_node
     ports:
       - "29734:29734/udp"
+      - "29734:29734"
       - "127.0.0.1:29735:29735"
     networks:
       - frontend
