@@ -12,7 +12,7 @@
         "version": "12",
         "peering_port": "29734",
         "bootstrap_fraction_numerator": "1",
-        "receive_minimum": "1000000000000000000000000",
+        "receive_minimum": "100",
         "logging": {
             "version": "3",
             "ledger": "false",
@@ -36,8 +36,9 @@
         },
         "work_peers": "",
         "preconfigured_peers": [
-            "qlcChain.online",
-            "node1.qlcChain.online"
+            "qlcchain.online",
+            "node1.qlcchain.online",
+            "node2.qlcchain.online "
         ],
         "preconfigured_representatives": [
             "qlc_3oftfjxu9x9pcjh1je3xfpikd441w1wo313qjc6ie1es5aobwed5x4pjojic"
