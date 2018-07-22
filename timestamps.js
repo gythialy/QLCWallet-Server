@@ -44,10 +44,14 @@ async function mapAccountHistory(nodeResult) {
   const hashes = nodeResult.history.map(tx => tx.hash);
   const txHashes = await getTimestamps(hashes);
 
-  nodeResult.history = nodeResult.history.map(tx => {
-    tx.timestamp = txHashes[tx.hash];
-    return tx;
-  });
+  if (txHashes === undefined || Object.keys(txHashes).length == 0) {
+    logger.warn('[mapAccountHistory] can not get timestamps of hash %s', hashes);
+  } else {
+    nodeResult.history = nodeResult.history.map(tx => {
+      tx.timestamp = txHashes[tx.hash];
+      return tx;
+    });
+  }
 
   return nodeResult;
 }
@@ -55,6 +59,9 @@ async function mapAccountHistory(nodeResult) {
 async function mapBlocksInfo(blockHashes, nodeResult) {
   if (!nodeResult || !nodeResult.blocks) return nodeResult;
   const txHashes = await getTimestamps(blockHashes);
+  if (txHashes === undefined || Object.keys(txHashes).length == 0) {
+    logger.warn('[mapBlocksInfo] can not get timestamps of hash %s', hashes);
+  }
 
   for (let block in nodeResult.blocks) {
     nodeResult.blocks[block].timestamp = txHashes[block] || null;
@@ -71,6 +78,9 @@ async function mapPending(nodeResult) {
   }
 
   const txHashes = await getTimestamps(pendingHashes);
+  if (txHashes === undefined || Object.keys(txHashes).length == 0) {
+    logger.warn('[mapPending] can not get timestamps of hash %s', hashes);
+  }
   for (let block in nodeResult.blocks) {
     nodeResult.blocks[block].timestamp = txHashes[block] || null;
   }
@@ -90,8 +100,9 @@ async function saveHashTimestamp(hash) {
           hash,
           timestamp: d.getTime() + (d.getTimezoneOffset() * 60 * 1000), // Get milliseconds in UTC
         });
+        logger.info(`insert timpstamp for hash ${hash}`);
       } else {
-        logger.info(`${hash} already exist.`);
+        logger.warn(`${hash} already exist, ignore`);
       }
     })
     .catch(function (err) {
