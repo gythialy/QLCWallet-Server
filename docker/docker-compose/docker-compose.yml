@@ -7,7 +7,7 @@ services:
     ports:
       - "127.0.0.1:5432:5432"
     networks:
-      - backend
+      - qlcwallet
     environment:
       - POSTGRES_USER=qlc
       - POSTGRES_DB=qlcwallet
@@ -29,7 +29,7 @@ services:
     ports:
       - "127.0.0.1:6379:6379"
     networks:
-      - backend
+      - qlcwallet
     restart: always
 
   qlcchain_node:
@@ -40,7 +40,7 @@ services:
       - "29734:29734"
       - "127.0.0.1:29735:29735"
     networks:
-      - frontend
+      - qlcwallet
     volumes:
       - type: bind
         source: ./qlc_node/QLCChain
@@ -52,10 +52,11 @@ services:
     container_name: qlc_wallet_server
     ports:
       - "8888:8888"
+      - "3000:3000"
       - "127.0.0.1:8889:8889"
     networks:
-      - frontend
-      - backend
+      - qlcwallet
+      - traefik
     volumes:
       - type: bind
         source: ./wallet-server/.env
@@ -65,13 +66,49 @@ services:
         - redis
         - qlcchain_node
     restart: always
+    labels:
+      - "traefik.enable=true"
+      - "traefik.backend=qlc_wallet_server"
+      - "traefik.first.port=8888"
+      - "traefik.first.frontend.rule=Host:wallet.qlcchain.online"  
+      - "traefik.second.port=3000"
+      - "traefik.second.frontend.rule=Host:ws.qlcchain.online" 
+      - "traefik.docker.network=traefik"
+
+#   traefik:
+#     hostname: traefik
+#     image: traefik:latest
+#     container_name: traefik
+#     restart: always
+#     domainname: qlcchain.online
+#     networks:
+#       - default
+#       - traefik
+#     ports:
+#       - "80:80"
+#       - "443:443"
+#       - "8080:8080"
+#     environment:
+#       - CLOUDFLARE_EMAIL=
+#       - CLOUDFLARE_API_KEY=
+#     labels:
+#       - "traefik.enable=true"
+#       - "traefik.backend=traefik"
+#       - "traefik.frontend.rule=Host:traefik.qlcchain.online"  
+# #      - "traefik.frontend.rule=Host:${DOMAINNAME}; PathPrefixStrip: /traefik"
+#       - "traefik.port=8080"
+#       - "traefik.docker.network=traefik"
+#     volumes:
+#       - /var/run/docker.sock:/var/run/docker.sock:ro
+#       - ./traefik:/etc/traefik
+#       - ./shared:/shared
 
 secrets:
   db_root_password:
     file: ./postgresql/db_secret.txt
 
 networks:
-  frontend:
-    name: qlcwallet-front-end
-  backend:
-    name: qlcwallet-backend
+  qlcwallet:
+    name: qlcwallet
+  traefik:
+    name: traefik_proxy

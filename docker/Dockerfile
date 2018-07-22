@@ -22,5 +22,5 @@ VOLUME [ "/app/config" ]
 COPY docker/docker-entry.sh /docker-entry.sh
 RUN chmod +x /docker-entry.sh
 
-EXPOSE 8888 8889
+EXPOSE 3000 8888 8889
 CMD ["/bin/sh",  "/docker-entry.sh"]
