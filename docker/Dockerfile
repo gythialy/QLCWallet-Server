@@ -17,7 +17,7 @@ RUN npm install --only=production
 # Bundle app source
 COPY ./ /app
 
-VOLUME [ "/app/config" ]
+VOLUME [ "/app/config","/var/log/wallet-server/" ]
 
 COPY docker/docker-entry.sh /docker-entry.sh
 RUN chmod +x /docker-entry.sh

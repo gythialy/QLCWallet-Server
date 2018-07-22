@@ -1,6 +1,24 @@
-require('dotenv').config()
-const timestamps = require('./timestamps');
-timestamps.createTimestampTable();
+require('dotenv').config();
+import {
+  logger
+} from './log';
+import {
+  createTimestampTable,
+  mapAccountHistory,
+  mapBlocksInfo,
+  mapPending,
+  saveHashTimestamp
+} from './timestamps';
+import express, {
+  json as _json
+} from 'express';
+import request from 'request-promise-native';
+import cors from 'cors';
+import {
+  promisify
+} from 'util';
+
+createTimestampTable();
 
 /** Configuration **/
 const qlcNodeUrl = process.env.QLC_NODE_URL || `http://qlc_node:29735`; // Nano node RPC url
@@ -13,13 +31,6 @@ const useRedisCache = !!process.env.USE_REDIS || false; // Change this if you ar
 const redisCacheUrl = process.env.REDIS_HOST || `redis`; // Url to the redis server (If used)
 const redisCacheTime = 60 * 60 * 24; // Store work for 24 Hours
 const memoryCacheLength = 800; // How much work to store in memory (If used)
-
-const express = require('express');
-const request = require('request-promise-native');
-const cors = require('cors');
-const {
-  promisify
-} = require('util');
 
 const workCache = [];
 let getCache, putCache;
@@ -107,29 +118,29 @@ app.post('/api/node-api', async (req, res) => {
 
       // Add timestamps to certain requests
       if (req.body.action === 'account_history') {
-        proxyRes = await timestamps.mapAccountHistory(proxyRes);
+        proxyRes = await mapAccountHistory(proxyRes);
       }
       if (req.body.action === 'blocks_info') {
-        proxyRes = await timestamps.mapBlocksInfo(req.body.hashes, proxyRes);
+        proxyRes = await mapBlocksInfo(req.body.hashes, proxyRes);
       }
       if (req.body.action === 'pending') {
-        proxyRes = await timestamps.mapPending(proxyRes);
+        proxyRes = await mapPending(proxyRes);
       }
       res.json(proxyRes)
     })
     .catch(err => res.status(500).json(err.toString()));
 });
 
-app.listen(listeningPort, () => console.log(`QLC Wallet server listening on port ${listeningPort}!`));
+app.listen(listeningPort, () => logger.info(`QLC Wallet server listening on port ${listeningPort}!`));
 
 // Configure the cache functions to work based on if we are using redis or not
 if (useRedisCache) {
   const cacheClient = require('redis').createClient({
     host: redisCacheUrl,
   });
-  cacheClient.on('ready', () => console.log(`Redis Work Cache: Connected`));
-  cacheClient.on('error', (err) => console.log(`Redis Work Cache: Error`, err));
-  cacheClient.on('end', () => console.log(`Redis Work Cache: Connection closed`));
+  cacheClient.on('ready', () => logger.info(`Redis Work Cache: Connected`));
+  cacheClient.on('error', (err) => logger.error(`Redis Work Cache: Error `, err));
+  cacheClient.on('end', () => logger.info(`Redis Work Cache: Connection closed`));
 
   getCache = promisify(cacheClient.get).bind(cacheClient);
   putCache = (hash, work, time) => {
@@ -162,7 +173,7 @@ rcp_callback_app.use((req, res, next) => {
   req.headers['content-type'] = 'application/json';
   next();
 });
-rcp_callback_app.use(express.json());
+rcp_callback_app.use(_json());
 rcp_callback_app.post('/api/new-block', (req, res) => {
   res.sendStatus(200);
   tpsCount++;
@@ -171,9 +182,9 @@ rcp_callback_app.post('/api/new-block', (req, res) => {
   try {
     // TODO: refine 
     //fullBlock.block = JSON.parse(fullBlock.block);
-    timestamps.saveHashTimestamp(fullBlock.hash);
+    saveHashTimestamp(fullBlock.hash);
   } catch (err) {
-    return console.log(`Error parsing block data! `, err.message);
+    return logger.error(`Error parsing block data! %s`, err.message);
   }
 
   let destinations = [];
@@ -191,7 +202,7 @@ rcp_callback_app.post('/api/new-block', (req, res) => {
   destinations.forEach(destination => {
     if (!subscriptionMap[destination]) return; // Nobody listening for this
 
-    console.log(`Sending block to subscriber ${destination}: `, fullBlock.amount);
+    logger.info(`Sending block to subscriber ${destination}: `, fullBlock.amount);
 
     subscriptionMap[destination].forEach(ws => {
       const event = {
@@ -207,26 +218,28 @@ rcp_callback_app.get('/health-check', (req, res) => {
   res.sendStatus(200);
 });
 
-rcp_callback_app.listen(webserverPort, () => console.log(`QLCChain RPC callback server listening on port ${webserverPort}!`));
+rcp_callback_app.listen(webserverPort, () => logger.info(`QLCChain RPC callback server listening on port ${webserverPort}!`));
 
-const WebSocketServer = require('uws').Server;
+import {
+  Server as WebSocketServer
+} from 'uws';
 const wss = new WebSocketServer({
   port: websocketPort
 });
 
 wss.on('connection', function (ws) {
   ws.subscriptions = [];
-  console.log(`WS: - New Connection`);
+  logger.info(`WS: - New Connection`);
   ws.on('message', message => {
     try {
       const event = JSON.parse(message);
       parseEvent(ws, event);
     } catch (err) {
-      console.log(`WS: Bad message: `, err);
+      logger.error(`WS: Bad message: `, err);
     }
   });
   ws.on('close', event => {
-    console.log(`WS: - Connection Closed`);
+    logger.info(`WS: - Connection Closed`);
     ws.subscriptions.forEach(account => {
       if (!subscriptionMap[account] || !subscriptionMap[account].length) return; // Not in there for some reason?
 
@@ -276,7 +289,7 @@ function unsubscribeAccounts(ws, accounts) {
 
     const globalIndex = subscriptionMap[account].indexOf(ws);
     if (globalIndex === -1) {
-      console.log(`WS: Subscribe, not found in the global map?  Potential leak? `, account);
+      logger.info(`WS: Subscribe, not found in the global map?  Potential leak? ${account}`);
       return;
     }
 
@@ -287,10 +300,10 @@ function unsubscribeAccounts(ws, accounts) {
 function printStats() {
   const connectedClients = wss.clients.length;
   const tps = tpsCount / statTime;
-  console.log(`[Stats] Connected clients: ${connectedClients}; TPS Average: ${tps}`);
+  logger.info(`[Stats] Connected clients: ${connectedClients}; TPS Average: ${tps}`);
   tpsCount = 0;
 }
 
 setInterval(printStats, statTime * 1000); // Print stats every x seconds
 
-console.log(`QLC wallet websocket server listening on port ${websocketPort}!`);
+logger.info(`QLC wallet websocket server listening on port ${websocketPort}!`);

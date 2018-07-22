@@ -1,3 +1,7 @@
+import {
+  logger
+} from './log';
+
 const knex = require('knex')({
   client: 'pg',
   connection: {
@@ -27,8 +31,7 @@ async function getTimestamps(hashes) {
 
     return returnHashes;
   } catch (err) {
-    console.log(`Error retrieving timestamps for `, hashes);
-    console.log(err);
+    logger.error(`Error retrieving timestamps for %s, %s, %s`, hashes, err.message, err.stack);
     return [];
   }
 }
@@ -76,7 +79,7 @@ async function mapPending(nodeResult) {
 }
 
 async function saveHashTimestamp(hash) {
-  console.log(`Saving block timestamp: `, hash);
+  logger.info(`Saving block timestamp: ${hash}`);
   const d = new Date();
 
   await knex('timestamps').select()
@@ -88,11 +91,11 @@ async function saveHashTimestamp(hash) {
           timestamp: d.getTime() + (d.getTimezoneOffset() * 60 * 1000), // Get milliseconds in UTC
         });
       } else {
-        console.log(`${hash} already exist.`);
+        logger.info(`${hash} already exist.`);
       }
     })
     .catch(function (err) {
-      console.log(`Error saving hash timestamp:`, err.message, err);
+      logger.error(`Error saving hash timestamp: %s, %s`, err.message, err.stack);
     })
 }
 
@@ -108,11 +111,11 @@ async function createTimestampTable() {
       }
     })
     .catch(err => {
-      console.log('create table error !!!', err.message, err.stack)
+      logger.error('create table error, %s, %s', err.message, err.stack);
     });
 }
 
-module.exports = {
+export {
   getTimestamp,
   getTimestamps,
   mapAccountHistory,
