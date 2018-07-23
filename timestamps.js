@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 import {
   logger
 } from './log';
@@ -110,7 +112,7 @@ async function saveHashTimestamp(hash) {
     })
 }
 
-async function createTimestampTable() {
+function createTimestampTable() {
   return knex.schema
     .hasTable('timestamps')
     .then(ifExist => {
@@ -118,7 +120,10 @@ async function createTimestampTable() {
         return knex.schema.createTable('timestamps', (table) => {
           table.string('hash').notNullable().primary;
           table.bigInteger('timestamp');
-        })
+          logger.info('create table timestamps');
+        });
+      } else {
+        logger.info('timestamps already exist !!!')
       }
     })
     .catch(err => {

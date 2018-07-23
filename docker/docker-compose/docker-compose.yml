@@ -63,7 +63,7 @@ services:
         target: /app/config/.env
       - type: bind
         source: ./wallet-server/logs
-        target: /var/log/wallet-server/
+        target: /var/log/wallet-server
     depends_on: 
         - postgresql
         - redis

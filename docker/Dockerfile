@@ -1,4 +1,5 @@
 FROM node:alpine
+LABEL LABEL="Goren G <yong.gu@qlink.mobi>"
 
 RUN apk add --update libc6-compat \
     && rm -rf /var/cache/apk/*
@@ -17,7 +18,7 @@ RUN npm install --only=production
 # Bundle app source
 COPY ./ /app
 
-VOLUME [ "/app/config","/var/log/wallet-server/" ]
+VOLUME [ "/app/config","/var/log/wallet-server" ]
 
 COPY docker/docker-entry.sh /docker-entry.sh
 RUN chmod +x /docker-entry.sh

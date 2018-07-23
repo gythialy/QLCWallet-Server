@@ -18,8 +18,6 @@ import {
   promisify
 } from 'util';
 
-createTimestampTable();
-
 /** Configuration **/
 const qlcNodeUrl = process.env.QLC_NODE_URL || `http://qlc_node:29735`; // Nano node RPC url
 const qlcWorkNodeUrl = process.env.QLC_WORK_NODE_URL || `http://qlc_node:29735`; // Nano work node RPC url
@@ -31,6 +29,8 @@ const useRedisCache = !!process.env.USE_REDIS || false; // Change this if you ar
 const redisCacheUrl = process.env.REDIS_HOST || `redis`; // Url to the redis server (If used)
 const redisCacheTime = 60 * 60 * 24; // Store work for 24 Hours
 const memoryCacheLength = 800; // How much work to store in memory (If used)
+
+createTimestampTable();
 
 const workCache = [];
 let getCache, putCache;
