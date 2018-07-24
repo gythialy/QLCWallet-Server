@@ -102,7 +102,7 @@ app.post('/api/node-api', async (req, res) => {
   // Send the request to the Nano node and return the response
   request({
       method: 'post',
-      uri: (workRequest || representativeRequest) ? qlcWorkNodeUrl : qlcNodeUrl,
+      uri: workRequest ? qlcWorkNodeUrl : qlcNodeUrl,
       body: req.body,
       json: true
     })
