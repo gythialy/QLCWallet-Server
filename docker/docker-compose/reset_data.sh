@@ -1,10 +1,14 @@
 #!/bin/bash
 
-sudo rm -rf postgresql/data/*
 sudo rm -rf qlc_node/QLCChain/data.ldb qlc_node/QLCChain/data.ldb-lock qlc_node/QLCChain/log
 
+if [ -d postgresql/data/ ]; then
+    sudo rm -rf postgresql/data
+    mkdir -p postgresql/data
+fi
+
 if [ -d traefik/acme/ ]; then
-    sudo rm -rf traefik/acme/*
+    rm -rf traefik/acme/*
 else
     mkdir -p traefik/acme/
 fi
