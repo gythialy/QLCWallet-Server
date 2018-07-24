@@ -180,7 +180,7 @@ rcp_callback_app.post('/api/new-block', (req, res) => {
 
   const fullBlock = req.body;
   try {
-    logger.info(`receive rpc callback ${fullBlock.hash} of ${fullBlock}`);
+    logger.info(`receive rpc callback ${fullBlock.hash} of ${fullBlock.block}`);
     fullBlock.block = JSON.parse(fullBlock.block);
     saveHashTimestamp(fullBlock.hash);
   } catch (err) {
