@@ -180,11 +180,11 @@ rcp_callback_app.post('/api/new-block', (req, res) => {
 
   const fullBlock = req.body;
   try {
-    // TODO: refine 
-    //fullBlock.block = JSON.parse(fullBlock.block);
+    logger.info(`receive rpc callback ${fullBlock.hash} of ${fullBlock}`);
+    fullBlock.block = JSON.parse(fullBlock.block);
     saveHashTimestamp(fullBlock.hash);
   } catch (err) {
-    return logger.error(`Error parsing block data! %s`, err.message);
+    return logger.error(`Error parsing block data! ${err.message}, ${err.stack}`);
   }
 
   let destinations = [];
