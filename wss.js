@@ -1,5 +1,5 @@
 // Copyright (c) 2018 QLCChain Team
-// 
+//
 // This software is released under the MIT License.
 // https://opensource.org/licenses/MIT
 
@@ -7,49 +7,28 @@ import { Server } from "ws";
 import { logger } from "./log";
 
 export default class PushServer {
-  constructor(port, subscriptionMap) {
+  constructor(server, subscriptionMap) {
     this.subscriptionMap = subscriptionMap;
-    this.wss = new Server({
-      port: port || 3000,
-      perMessageDeflate: {
-        zlibDeflateOptions: {
-          // See zlib defaults.
-          chunkSize: 1024,
-          memLevel: 7,
-          level: 3
-        },
-        zlibInflateOptions: {
-          chunkSize: 10 * 1024
-        },
-        // Other options settable:
-        clientNoContextTakeover: true, // Defaults to negotiated value.
-        serverNoContextTakeover: true, // Defaults to negotiated value.
-        clientMaxWindowBits: 10, // Defaults to negotiated value.
-        serverMaxWindowBits: 10, // Defaults to negotiated value.
-        // Below options specified as default values.
-        concurrencyLimit: 10, // Limits zlib concurrency for perf.
-        threshold: 1024 // Size (in bytes) below which messages
-        // should not be compressed.
-      }
-    });
+    this.wss = new Server({ server });
 
     let thisObj = this;
-    this.wss.on("connection", ws => {
+    this.wss.on("connection", (ws, req) => {
       ws.subscriptions = [];
-      logger.info(`WS: - New Connection`);
+      logger.info(`[WS]: New Connection from ${req.connection.remoteAddress}`);
       ws.isAlive = true;
 
-      ws.on("pong", ws => (ws.isAlive = true));
+      ws.on("pong", () => (ws.isAlive = true));
       ws.on("message", message => {
         try {
+          logger.info(`receive: ${message}`);
           const event = JSON.parse(message);
           thisObj.parseEvent(ws, event);
         } catch (err) {
-          logger.error(`WS: Bad message: %s %s`, err.mesage, err.stack);
+          logger.error(`[WS]: Bad message: %s %s`, err.mesage, err.stack);
         }
       });
-      ws.on("close", event => {
-        logger.info(`WS: - Connection Closed. ${event}`);
+      ws.on("close", (ws, code, reason) => {
+        logger.info(`[WS]: - Connection Closed, because of ${code}[${reason}]`);
         ws.subscriptions.forEach(account => {
           if (!subscriptionMap[account] || !subscriptionMap[account].length)
             return;
@@ -66,19 +45,19 @@ export default class PushServer {
     });
 
     this.wss.on("error", (ws, err) => {
-      logger.err(err);
+      logger.err(`[WSS]: error ${err.stack}`);
     });
 
-    // setInterval(() => {
-    //   wss.clients.forEach(ws => {
-    //     if (ws.isAlive === false) {
-    //       return ws.terminate();
-    //     }
+    setInterval(() => {
+      this.wss.clients.forEach(ws => {
+        if (!ws.isAlive) {
+          return ws.terminate();
+        }
 
-    //     ws.isAlive = false;
-    //     ws.on("ping", () => {});
-    //   });
-    // }, 30000);
+        ws.isAlive = false;
+        ws.ping(null, false, true);
+      });
+    }, 30000);
   }
 
   parseEvent(ws, event) {

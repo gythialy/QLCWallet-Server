@@ -1,13 +1,14 @@
 // Copyright (c) 2018 QLCChain Team
-// 
+//
 // This software is released under the MIT License.
 // https://opensource.org/licenses/MIT
 
 require("dotenv").config();
 
 import express, { json as _json } from "express";
+import * as http from "http";
 import request from "request-promise-native";
-import cors from "cors";
+// import cors from "cors";
 import { promisify } from "util";
 import { logger } from "./log";
 const Timestamp = require("./timestamps").default;
@@ -17,7 +18,6 @@ const PushServer = require("./wss").default;
 const qlcNodeUrl = process.env.QLC_NODE_URL || `http://qlc_node:29735`; // Nano node RPC url
 const qlcWorkNodeUrl = process.env.QLC_WORK_NODE_URL || `http://qlc_node:29735`; // Nano work node RPC url
 const listeningPort = process.env.APP_PORT || 8888; // Port this app will listen on
-const websocketPort = process.env.WEB_SOCKET_PORT || 3333;
 const statTime = 10;
 const useRedisCache = !!process.env.USE_REDIS || false; // Change this if you are not running a Redis server.  Will use in memory cache instead.
 const redisCacheUrl = process.env.REDIS_HOST || `redis`; // Url to the redis server (If used)
@@ -46,13 +46,19 @@ const subscriptionMap = {};
 // Statistics reporting?
 let tpsCount = 0;
 
+const server = http.createServer(app);
+const wss = new PushServer(server, subscriptionMap);
 // Set up the webserver
 const app = express();
-app.use(cors());
+server.on('request', app);
+
+// app.use(cors());
 app.use(require("morgan")("combined", { stream: loggerstream }));
 app.use(_json());
 app.use((req, res, next) => {
-  if (req.headers["content-type"]) return next();
+  if (req.headers["content-type"]) {
+    return next();
+  }
   req.headers["content-type"] = "application/json";
   next();
 });
@@ -197,7 +203,7 @@ app.get("/health-check", (req, res) => {
   res.sendStatus(200);
 });
 
-app.listen(listeningPort, () =>
+server.listen(listeningPort, () =>
   logger.info(`QLC Wallet server listening on port ${listeningPort}!`)
 );
 
@@ -233,8 +239,6 @@ if (useRedisCache) {
   };
 }
 
-const wss = new PushServer(websocketPort, subscriptionMap);
-
 function printStats() {
   const connectedClients = wss.length();
   const tps = tpsCount / statTime;
@@ -245,4 +249,18 @@ function printStats() {
 }
 
 setInterval(printStats, statTime * 1000); // Print stats every x seconds
-logger.info(`QLC wallet websocket server listening on port ${websocketPort}!`);
+
+// const WebSocket = require("ws");
+
+// const ws = new WebSocket(`ws://localhost:${listeningPort}`);
+
+// ws.on("open", function open() {
+//   ws.send(
+//     JSON.stringify({
+//       event: "subscribe",
+//       data: ["test_account1", "test_account2"]
+//     })
+//   );
+// });
+
+// ws.on("message", data => console.log(data));

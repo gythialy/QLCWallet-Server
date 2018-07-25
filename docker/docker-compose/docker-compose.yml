@@ -52,7 +52,6 @@ services:
     container_name: qlc_wallet_server
     ports:
       - "8888:8888"
-      - "3000:3000"
     networks:
       - qlcwallet
       - traefik
@@ -71,10 +70,8 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.backend=qlc_wallet_server"
-      - "traefik.first.port=8888"
-      - "traefik.first.frontend.rule=Host:api.qlcchain.online"  
-      - "traefik.second.port=3000"
-      - "traefik.second.frontend.rule=Host:ws.qlcchain.online" 
+      - "traefik.api.port=8888"
+      - "traefik.api.frontend.rule=Host:api.qlcchain.online"  
       - "traefik.docker.network=traefik"
 
 #   traefik:
