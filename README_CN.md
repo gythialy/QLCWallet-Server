@@ -1,7 +1,9 @@
 <div align="right">Language: 
 <a title="Chinese" href="README_CN.md">:cn:</a>
 <a title="Englisth" href="README.md">:us:</a></div>
+
 # QLC Wallet Server
+
 ---
 QLC Chain 在线钱包，部分设计参考至 [Nanovault](https://nanovault.io/)。
 
