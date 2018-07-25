@@ -1,8 +1,14 @@
+<div align="right">Language:
+<a title="Chinese" href="README_CN.md">:cn:</a>
+<a title="Englisth" href="README.md">:us:</a></div>
 # QLC Wallet Server
+---
+QLC Chain online wallet inspired by [Nanovault](https://nanovault.io/).
 
-QLC Chain online wallet inspired by [Nanovault](https://nanovault.io/), some code are ported from it.
+## Feature
 
-**[English](README.md)** **[中文](README_CN.md)**
+- Brokers public communication between the wallet and the QLCChain Node.
+- Websocket server that receives new blocks from the Q;CChain node and sends them in real time to the wallet ui.
 
 ## Build Instructions
 

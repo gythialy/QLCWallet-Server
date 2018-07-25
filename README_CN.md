@@ -1,8 +1,14 @@
+<div align="right">Language: 
+<a title="Chinese" href="README_CN.md">:cn:</a>
+<a title="Englisth" href="README.md">:us:</a></div>
 # QLC Wallet Server
+---
+QLC Chain 在线钱包，部分设计参考至 [Nanovault](https://nanovault.io/)。
 
-QLC Chain 在线钱包，部分代码移植自 [Nanovault](https://nanovault.io/)。
+## 特点
 
-**[English](README.md)** **[中文](README_CN.md)**
+- 代理钱包与 QLC 链直接的 RPC 请求，为移动端设备提供 PoW 算力支持
+- Websocket 服务在收到 QLC 链上块的同时会即时推送给相关钱包用户，提高相应速度
 
 ## 编译
 
