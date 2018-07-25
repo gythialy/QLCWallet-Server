@@ -17,7 +17,8 @@
             "env": {
                 "NODE_ENV": "development"
             },
-            "sourceMaps": true
+            "sourceMaps": true,
+            "console": "internalConsole"
         },
         {
             "type": "node",
@@ -33,7 +34,8 @@
               "--require",
               "babel-register"
             ],
-            "sourceMaps": true
+            "sourceMaps": true,
+            "console": "internalConsole"
         },
     ]
 }
