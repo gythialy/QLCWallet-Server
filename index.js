@@ -1,3 +1,8 @@
+// Copyright (c) 2018 QLCChain Team
+// 
+// This software is released under the MIT License.
+// https://opensource.org/licenses/MIT
+
 require("dotenv").config();
 
 import express, { json as _json } from "express";
