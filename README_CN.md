@@ -1,4 +1,4 @@
-<div align="right">Language: 
+<div align="right">语言: 
 <a title="Chinese" href="README_CN.md">:cn:</a>
 <a title="Englisth" href="README.md">:us:</a></div>
 
