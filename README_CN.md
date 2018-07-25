@@ -4,7 +4,6 @@
 
 # QLC Wallet Server
 
----
 QLC Chain 在线钱包，部分设计参考至 [Nanovault](https://nanovault.io/)。
 
 ## 特点

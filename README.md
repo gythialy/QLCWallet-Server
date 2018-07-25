@@ -4,7 +4,6 @@
 
 # QLC Wallet Server
 
----
 QLC Chain online wallet inspired by [Nanovault](https://nanovault.io/).
 
 ## Feature
