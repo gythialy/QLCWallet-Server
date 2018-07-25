@@ -23,5 +23,5 @@ VOLUME [ "/app/config","/var/log/wallet-server" ]
 COPY docker/docker-entry.sh /docker-entry.sh
 RUN chmod +x /docker-entry.sh
 
-EXPOSE 3000 8888 8889
+EXPOSE 3000 8888
 CMD ["/bin/sh",  "/docker-entry.sh"]
