@@ -8,7 +8,7 @@ require("dotenv").config();
 import express, { json as _json } from "express";
 import * as http from "http";
 import request from "request-promise-native";
-// import cors from "cors";
+import cors from "cors";
 import { promisify } from "util";
 import { logger } from "./log";
 const Timestamp = require("./timestamps").default;
@@ -52,7 +52,7 @@ const wss = new PushServer(server, subscriptionMap);
 const app = express();
 server.on('request', app);
 
-// app.use(cors());
+app.use(cors());
 app.use(require("morgan")("combined", { stream: loggerstream }));
 app.use(_json());
 app.use((req, res, next) => {
