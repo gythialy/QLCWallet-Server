@@ -44,10 +44,6 @@ docker container run -d --name qlcwallet-server \
     qlcwallet-server:latest
 ```
 
-### docker-compose
+### License
 
-- Install docker-compse
-- Change PostgreSQL password in [docker-compose.yml#L14](docker/docker-compose/docker-compose.yml#L14) `POSTGRES_PASSWORD=SHOULD_BE_CHANGED`
-- Change PostgreSQL login info in [wallet-server/.env#L9](docker/docker-compose/wallet-server/.env#L9) `DB_PASS=SHOULD_BE_CHANGED` (the password should be matched)
-- Start all containers `docker-compose up -d`
-- Stop and remove all containers `docker-compose down -v`
+ MIT Copyright (c) 2018 QLC Chain Team
