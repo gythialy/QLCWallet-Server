@@ -11,6 +11,7 @@ import request from "request-promise-native";
 import cors from "cors";
 import { promisify } from "util";
 import { logger } from "./log";
+const { PerformanceObserver, performance } = require('perf_hooks');
 const Timestamp = require("./timestamps").default;
 const PushServer = require("./wss").default;
 
@@ -23,6 +24,13 @@ const useRedisCache = !!process.env.USE_REDIS || false; // Change this if you ar
 const redisCacheUrl = process.env.REDIS_HOST || `redis`; // Url to the redis server (If used)
 const redisCacheTime = 60 * 60 * 24; // Store work for 24 Hours
 const memoryCacheLength = 800; // How much work to store in memory (If used)
+
+const obs = new PerformanceObserver((items) => {
+  const entry = items.getEntries()[0];
+  logger.info(`${entry.name} cost ${entry.duration} ms`);
+  performance.clearMarks();
+});
+obs.observe({ entryTypes: ['measure'] });
 
 let ts = new Timestamp(
   process.env.DB_HOST,
@@ -103,7 +111,7 @@ app.post("/", async (req, res) => {
 
     const cachedWork = useRedisCache
       ? await getCache(req.body.hash)
-      : getCache(req.body.hash); // Only redis is an async operation
+      : getCache(req.body.hash); // Only redis is an as operation
     if (cachedWork && cachedWork.length) {
       return res.json({
         work: cachedWork
@@ -123,12 +131,13 @@ app.post("/", async (req, res) => {
     representativeRequest = true;
   }
 
-  // Send the request to the Nano node and return the response
+  performance.mark('A');
   request({
     method: "post",
     uri: workRequest ? qlcWorkNodeUrl : qlcNodeUrl,
     body: req.body,
-    json: true
+    json: true,
+    timeout: 20000
   })
     .then(async proxyRes => {
       if (proxyRes) {
@@ -150,9 +159,16 @@ app.post("/", async (req, res) => {
       if (req.body.action === "pending") {
         proxyRes = await ts.mapPending(proxyRes);
       }
+      performance.mark('B');
+      performance.measure(req.body.action, 'A', 'B');
       res.json(proxyRes);
     })
-    .catch(err => res.status(500).json(err.toString()));
+    .catch(err => {
+      performance.mark('C');
+      performance.measure(`${req.body.action} error`, 'A', 'C');
+      logger.error(`${req.body.action}: ${err.message}`);
+      res.status(500).json({ error: err.toString() })
+    });
 });
 
 app.post("/new-block", async (req, res) => {
