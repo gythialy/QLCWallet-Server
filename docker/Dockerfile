@@ -12,16 +12,23 @@ WORKDIR /app
 COPY package*.json /app/
 
 # If you are building your code for production
-# RUN npm install --only=production
 RUN npm install --only=production
 
 # Bundle app source
 COPY ./ /app/
 
-VOLUME [ "/app/config","/var/log/wallet-server" ]
-
-COPY docker/docker-entry.sh /docker-entry.sh
-RUN chmod +x /docker-entry.sh
+# VOLUME [ "/app/config","/var/log/wallet-server" ]
+ENV QLC_NODE_URL=http://qlc_node:29735 \
+    QLC_WORK_NODE_URL=http://qlc_node:29735 \
+    USE_REDIS= \
+    REDIS_HOST=redis \
+    DB_HOST=postgresql \
+    DB_USER=qlc \
+    DB_PASS=qlctest \
+    DB_NAME=qlcwallet \
+    DB_PORT=5432 \
+    DB_PASS=pass 
 
 EXPOSE 8888
-CMD ["/bin/sh",  "/docker-entry.sh"]
+
+CMD [ "npm", "start" ]
