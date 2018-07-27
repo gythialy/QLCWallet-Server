@@ -3,11 +3,7 @@
 // This software is released under the MIT License.
 // https://opensource.org/licenses/MIT
 
-import {
-  createLogger,
-  format as _format,
-  transports as _transports
-} from "winston";
+import { createLogger, format as _format, transports as _transports } from "winston";
 
 export let logger = createLogger({
   level: "info",
@@ -17,14 +13,10 @@ export let logger = createLogger({
     _format.splat(),
     _format.simple(),
     _format.printf(info => {
-      return `${info.timestamp} ${info.level}: ${info.message}`;
+      return `${info.timestamp}: ${info.message}`;
     })
   ),
   transports: [
-    new _transports.Console({
-      level: "debug",
-      colorize: true
-    }),
     new _transports.File({
       filename: "/var/log/wallet-server/error.log",
       level: "error",
@@ -44,3 +36,10 @@ export let logger = createLogger({
   ],
   exitOnError: false
 });
+
+if (process.env.NODE_ENV !== 'production') {
+  logger.add(new _transports.Console({
+    level: "debug",
+    colorize: true
+  }));
+}

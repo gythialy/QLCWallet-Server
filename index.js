@@ -33,7 +33,7 @@ let ts = new Timestamp(
 );
 
 let loggerstream = {
-  write: function(message, encoding) {
+  write: function (message) {
     logger.info(message);
   }
 };

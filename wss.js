@@ -20,14 +20,16 @@ export default class PushServer {
       ws.on("pong", () => (ws.isAlive = true));
       ws.on("message", message => {
         try {
-          logger.info(`receive: ${message}`);
           const event = JSON.parse(message);
           thisObj.parseEvent(ws, event);
+          if (event.event !== 'keepalive') {
+            logger.info(`receive: ${message}`);
+          }
         } catch (err) {
           logger.error(`[WS]: Bad message: %s %s`, err.mesage, err.stack);
         }
       });
-      ws.on("close", (ws, code, reason) => {
+      ws.on("close", (code, reason) => {
         logger.info(`[WS]: - Connection Closed, because of ${code}[${reason}]`);
         ws.subscriptions.forEach(account => {
           if (!subscriptionMap[account] || !subscriptionMap[account].length)
@@ -44,8 +46,8 @@ export default class PushServer {
       });
     });
 
-    this.wss.on("error", (ws, err) => {
-      logger.err(`[WSS]: error ${err.stack}`);
+    this.wss.on("error", (err) => {
+      logger.error(`[WSS]: error ${err.stack}`);
     });
 
     setInterval(() => {
