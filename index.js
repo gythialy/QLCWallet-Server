@@ -137,7 +137,7 @@ app.post("/", async (req, res) => {
     uri: workRequest ? qlcWorkNodeUrl : qlcNodeUrl,
     body: req.body,
     json: true,
-    timeout: 20000
+    timeout: 200000
   })
     .then(async proxyRes => {
       if (proxyRes) {
