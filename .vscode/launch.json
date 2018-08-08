@@ -12,13 +12,14 @@
             "stopOnEntry": false,
             "args": ["--presets es2015"],
             "cwd": "${workspaceRoot}",
-            "preLaunchTask": null,
+            "preLaunchTask": "build",
             "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/babel-node",
+            "runtimeArgs": [ "--nolazy" ],
             "env": {
                 "NODE_ENV": "development"
             },
             "sourceMaps": true,
-            "console": "internalConsole"
+            "console": "integratedTerminal"
         },
         {
             "type": "node",
@@ -34,8 +35,11 @@
               "--require",
               "babel-register"
             ],
+            "env": {
+                "NODE_ENV": "development"
+            },
             "sourceMaps": true,
-            "console": "internalConsole"
+            "console": "integratedTerminal"
         },
     ]
 }

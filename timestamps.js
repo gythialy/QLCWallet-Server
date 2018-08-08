@@ -1,20 +1,20 @@
 // Copyright (c) 2018 QLC Chain Team
-// 
+//
 // This software is released under the MIT License.
 // https://opensource.org/licenses/MIT
 
-import { logger } from "./log";
+import { logger } from './log';
 
 export default class Timestamp {
   constructor(host, port, user, password, database) {
-    this.tableName = "timestamps";
-    this.knex = require("knex")({
-      client: "pg",
+    this.tableName = 'timestamps';
+    this.knex = require('knex')({
+      client: 'pg',
       connection: {
         host: host,
         port: port,
         user: user,
-        password: password ? password : "",
+        password: password ? password : '',
         database: database
       }
     });
@@ -24,8 +24,8 @@ export default class Timestamp {
       .then(ifExist => {
         if (!ifExist) {
           return this.knex.schema.createTable(this.tableName, table => {
-            table.string("hash").notNullable().primary;
-            table.bigInteger("timestamp");
+            table.string('hash').notNullable().primary;
+            table.timestamp('timestamp');
             logger.info(`table [${this.tableName}] not exist, create it...`);
           });
         } else {
@@ -33,9 +33,7 @@ export default class Timestamp {
         }
       })
       .catch(err => {
-        logger.error(
-          `create table [${this.tableName}] error, ${err.message}, ${err.stack}`
-        );
+        logger.error(`create table [${this.tableName}] error, ${err.message}, ${err.stack}`);
       });
   }
 
@@ -51,7 +49,7 @@ export default class Timestamp {
     const returnHashes = {};
     try {
       const dbHashes = await this.knex(this.tableName)
-        .whereIn("hash", hashes)
+        .whereIn('hash', hashes)
         .select();
 
       hashes.forEach(hash => {
@@ -61,12 +59,7 @@ export default class Timestamp {
 
       return returnHashes;
     } catch (err) {
-      logger.error(
-        `Error retrieving timestamps for %s, %s, %s`,
-        hashes,
-        err.message,
-        err.stack
-      );
+      logger.error(`Error retrieving timestamps for %s, %s, %s`, hashes, err.message, err.stack);
       return [];
     }
   }
@@ -80,10 +73,7 @@ export default class Timestamp {
     const txHashes = await this.getTimestamps(hashes);
 
     if (txHashes === undefined || Object.keys(txHashes).length == 0) {
-      logger.warn(
-        "[mapAccountHistory] can not get timestamps of hash %s",
-        hashes
-      );
+      logger.warn('[mapAccountHistory] can not get timestamps of hash %s', hashes);
     } else {
       nodeResult.history = nodeResult.history.map(tx => {
         tx.timestamp = txHashes[tx.hash];
@@ -98,10 +88,7 @@ export default class Timestamp {
     if (!nodeResult || !nodeResult.blocks) return nodeResult;
     const txHashes = await this.getTimestamps(blockHashes);
     if (txHashes === undefined || Object.keys(txHashes).length == 0) {
-      logger.warn(
-        "[mapBlocksInfo] can not get timestamps of hash %s",
-        blockHashes
-      );
+      logger.warn('[mapBlocksInfo] can not get timestamps of hash %s', blockHashes);
     }
 
     for (let block in nodeResult.blocks) {
@@ -120,7 +107,7 @@ export default class Timestamp {
 
     const txHashes = await this.getTimestamps(pendingHashes);
     if (txHashes === undefined || Object.keys(txHashes).length == 0) {
-      logger.warn("[mapPending] can not get timestamps of hash %s", txHashes);
+      logger.warn('[mapPending] can not get timestamps of hash %s', txHashes);
     }
     for (let block in nodeResult.blocks) {
       nodeResult.blocks[block].timestamp = txHashes[block] || null;
@@ -131,27 +118,41 @@ export default class Timestamp {
 
   async saveHashTimestamp(hash) {
     logger.info(`Saving block timestamp: ${hash}`);
-    const d = new Date();
     const knex = this.knex;
     const table = this.tableName;
     await knex(table)
       .select()
-      .where("hash", hash)
-      .then(function(rows) {
+      .where('hash', hash)
+      .then(rows => {
         if (rows.length === 0) {
-          knex(table).insert({
-            hash,
-            timestamp: d.getTime() + d.getTimezoneOffset() * 60 * 1000 // Get milliseconds in UTC
-          });
-          logger.info(`insert timpstamp for hash ${hash}`);
+          const now = new Date();
+          const utcTimestamp = new Date(
+            now.getUTCFullYear(),
+            now.getUTCMonth(),
+            now.getUTCDate(),
+            now.getUTCHours(),
+            now.getUTCMinutes(),
+            now.getUTCSeconds()
+          );
+          const row = { hash: hash, timestamp: utcTimestamp };
+          logger.debug(`generate row: ${JSON.stringify(row)}`);
+          return knex
+            .insert(row)
+            .into(table)
+            .then(() => {
+              logger.info(`insert timestamp for hash ${hash} into ${table}`);
+              return { inserted: true };
+            })
+            .catch(error => {
+              logger.error(`insert timestamp for hash ${hash} error: ${error.message} >>> ${error.stack}`);
+            });
         } else {
           logger.warn(`${hash} already exist, ignore`);
+          return false;
         }
       })
       .catch(function(err) {
-        logger.error(
-          `Error saving hash timestamp:  ${err.message}, ${err.stack}`
-        );
+        logger.error(`Error saving hash timestamp:  ${err.message}, ${err.stack}`);
       });
   }
 }
