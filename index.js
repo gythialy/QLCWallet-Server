@@ -150,7 +150,7 @@ app.post("/", async (req, res) => {
       }
 
       // Add timestamps to certain requests
-      if (req.body.action === "account_history") {
+      if (req.body.action === "account_history" || req.body.action === 'account_history_topn') {
         proxyRes = await ts.mapAccountHistory(proxyRes);
       }
       if (req.body.action === "blocks_info") {
