@@ -3,17 +3,18 @@
 // This software is released under the MIT License.
 // https://opensource.org/licenses/MIT
 
-require("dotenv").config();
+require('dotenv').config();
 
-import express, { json as _json } from "express";
-import * as http from "http";
-import request from "request-promise-native";
-import cors from "cors";
-import { promisify } from "util";
-import { logger } from "./log";
+import express, { json as _json } from 'express';
+import * as http from 'http';
+import request from 'request-promise-native';
+import cors from 'cors';
+import { promisify } from 'util';
+import { logger } from './log';
 const { PerformanceObserver, performance } = require('perf_hooks');
-const Timestamp = require("./timestamps").default;
-const PushServer = require("./wss").default;
+const Timestamp = require('./timestamps').default;
+const PushServer = require('./wss').default;
+const LogDb = require('./logs').default;
 
 /** Configuration **/
 const qlcNodeUrl = process.env.QLC_NODE_URL || `http://qlc_node:29735`; // Nano node RPC url
@@ -25,23 +26,18 @@ const redisCacheUrl = process.env.REDIS_HOST || `redis`; // Url to the redis ser
 const redisCacheTime = 60 * 60 * 24; // Store work for 24 Hours
 const memoryCacheLength = 800; // How much work to store in memory (If used)
 
-const obs = new PerformanceObserver((items) => {
+const obs = new PerformanceObserver(items => {
   const entry = items.getEntries()[0];
   logger.info(`${entry.name} cost ${entry.duration} ms`);
   performance.clearMarks();
 });
 obs.observe({ entryTypes: ['measure'] });
 
-let ts = new Timestamp(
-  process.env.DB_HOST,
-  process.env.DB_PORT,
-  process.env.DB_USER,
-  process.env.DB_PASS,
-  process.env.DB_NAME
-);
+let ts = new Timestamp(process.env.DB_HOST, process.env.DB_PORT, process.env.DB_USER, process.env.DB_PASS, process.env.DB_NAME);
+let logdb = new LogDb(process.env.DB_HOST, process.env.DB_PORT, process.env.DB_USER, process.env.DB_PASS, process.env.DB_NAME);
 
 let loggerstream = {
-  write: function (message) {
+  write: function(message) {
     logger.info(message);
   }
 };
@@ -61,36 +57,36 @@ const app = express();
 server.on('request', app);
 
 app.use(cors());
-app.use(require("morgan")("combined", { stream: loggerstream }));
+app.use(require('morgan')('combined', { stream: loggerstream }));
 app.use(_json());
 app.use((req, res, next) => {
-  if (req.headers["content-type"]) {
+  if (req.headers['content-type']) {
     return next();
   }
-  req.headers["content-type"] = "application/json";
+  req.headers['content-type'] = 'application/json';
   next();
 });
 
 // Allow certain requests to the Nano RPC and cache work requests
-app.post("/", async (req, res) => {
+app.post('/', async (req, res) => {
   const allowedActions = [
-    "account_history",
-    "account_history_topn",
-    "account_info",
-    "accounts_frontiers",
-    "accounts_balances",
-    "accounts_pending",
-    "block",
-    "blocks",
-    "block_count",
-    "blocks_info",
-    "delegators_count",
-    "pending",
-    "process",
-    "representatives_online",
-    "validate_account_number",
-    "work_generate",
-    "tokens"
+    'account_history',
+    'account_history_topn',
+    'account_info',
+    'accounts_frontiers',
+    'accounts_balances',
+    'accounts_pending',
+    'block',
+    'blocks',
+    'block_count',
+    'blocks_info',
+    'delegators_count',
+    'pending',
+    'process',
+    'representatives_online',
+    'validate_account_number',
+    'work_generate',
+    'tokens'
   ];
   if (!req.body.action || allowedActions.indexOf(req.body.action) === -1) {
     return res.status(500).json({
@@ -103,15 +99,13 @@ app.post("/", async (req, res) => {
   let repCacheKey = `online-representatives`;
 
   // Cache work requests
-  if (req.body.action === "work_generate") {
+  if (req.body.action === 'work_generate') {
     if (!req.body.hash)
       return res.status(500).json({
         error: `Requires valid hash to perform work`
       });
 
-    const cachedWork = useRedisCache
-      ? await getCache(req.body.hash)
-      : getCache(req.body.hash); // Only redis is an as operation
+    const cachedWork = useRedisCache ? await getCache(req.body.hash) : getCache(req.body.hash); // Only redis is an as operation
     if (cachedWork && cachedWork.length) {
       return res.json({
         work: cachedWork
@@ -121,10 +115,8 @@ app.post("/", async (req, res) => {
   }
 
   // Cache the online representatives request
-  if (req.body.action === "representatives_online") {
-    const cachedValue = useRedisCache
-      ? await getCache(repCacheKey)
-      : getCache(repCacheKey); // Only redis is an async operation
+  if (req.body.action === 'representatives_online') {
+    const cachedValue = useRedisCache ? await getCache(repCacheKey) : getCache(repCacheKey); // Only redis is an async operation
     if (cachedValue && cachedValue.length) {
       return res.json(JSON.parse(cachedValue));
     }
@@ -133,7 +125,7 @@ app.post("/", async (req, res) => {
 
   performance.mark('A');
   request({
-    method: "post",
+    method: 'post',
     uri: workRequest ? qlcWorkNodeUrl : qlcNodeUrl,
     body: req.body,
     json: true,
@@ -150,13 +142,13 @@ app.post("/", async (req, res) => {
       }
 
       // Add timestamps to certain requests
-      if (req.body.action === "account_history" || req.body.action === 'account_history_topn') {
+      if (req.body.action === 'account_history' || req.body.action === 'account_history_topn') {
         proxyRes = await ts.mapAccountHistory(proxyRes);
       }
-      if (req.body.action === "blocks_info") {
+      if (req.body.action === 'blocks_info') {
         proxyRes = await ts.mapBlocksInfo(req.body.hashes, proxyRes);
       }
-      if (req.body.action === "pending") {
+      if (req.body.action === 'pending') {
         proxyRes = await ts.mapPending(proxyRes);
       }
       performance.mark('B');
@@ -167,11 +159,11 @@ app.post("/", async (req, res) => {
       performance.mark('C');
       performance.measure(`${req.body.action} error`, 'A', 'C');
       logger.error(`${req.body.action}: ${err.message}`);
-      res.status(500).json({ error: err.toString() })
+      res.status(500).json({ error: err.toString() });
     });
 });
 
-app.post("/new-block", async (req, res) => {
+app.post('/new-block', async (req, res) => {
   res.sendStatus(200);
   tpsCount++;
 
@@ -181,15 +173,13 @@ app.post("/new-block", async (req, res) => {
     fullBlock.block = JSON.parse(fullBlock.block);
     ts.saveHashTimestamp(fullBlock.hash);
   } catch (err) {
-    return logger.error(
-      `Error parsing block data! ${err.message}, ${err.stack}`
-    );
+    return logger.error(`Error parsing block data! ${err.message}, ${err.stack}`);
   }
 
   let destinations = [];
 
-  if (fullBlock.block.type === "state") {
-    if (fullBlock.is_send === "true" && fullBlock.block.link_as_account) {
+  if (fullBlock.block.type === 'state') {
+    if (fullBlock.is_send === 'true' && fullBlock.block.link_as_account) {
       destinations.push(fullBlock.block.link_as_account);
     }
     destinations.push(fullBlock.account);
@@ -201,13 +191,11 @@ app.post("/new-block", async (req, res) => {
   destinations.forEach(destination => {
     if (!subscriptionMap[destination]) return; // Nobody listening for this
 
-    logger.info(
-      `Sending block to subscriber ${destination}: ${fullBlock.amount}`
-    );
+    logger.info(`Sending block to subscriber ${destination}: ${fullBlock.amount}`);
 
     subscriptionMap[destination].forEach(ws => {
       const event = {
-        event: "newTransaction",
+        event: 'newTransaction',
         data: fullBlock
       };
       ws.send(JSON.stringify(event));
@@ -215,28 +203,31 @@ app.post("/new-block", async (req, res) => {
   });
 });
 
-app.get("/health-check", (req, res) => {
+app.get('/health-check', (req, res) => {
   res.sendStatus(200);
 });
 
-server.listen(listeningPort, () =>
-  logger.info(`QLC Wallet server listening on port ${listeningPort}!`)
-);
+app.post('/logs', async (req, res) => {
+  res.json({ OK: true });
+  const log = req.body;
+  logger.info(`REC: ${JSON.stringify(log)}`);
+  logdb.saveLog2Db(log);
+});
+
+server.listen(listeningPort, () => logger.info(`QLC Wallet server listening on port ${listeningPort}!`));
 
 // Configure the cache functions to work based on if we are using redis or not
 if (useRedisCache) {
-  const cacheClient = require("redis").createClient({
+  const cacheClient = require('redis').createClient({
     host: redisCacheUrl
   });
-  cacheClient.on("ready", () => logger.info(`Redis Work Cache: Connected`));
-  cacheClient.on("error", err => logger.error(`Redis Work Cache: Error `, err));
-  cacheClient.on("end", () =>
-    logger.info(`Redis Work Cache: Connection closed`)
-  );
+  cacheClient.on('ready', () => logger.info(`Redis Work Cache: Connected`));
+  cacheClient.on('error', err => logger.error(`Redis Work Cache: Error `, err));
+  cacheClient.on('end', () => logger.info(`Redis Work Cache: Connection closed`));
 
   getCache = promisify(cacheClient.get).bind(cacheClient);
   putCache = (hash, work, time) => {
-    cacheClient.set(hash, work, "EX", time || redisCacheTime); // Store the work for 24 hours
+    cacheClient.set(hash, work, 'EX', time || redisCacheTime); // Store the work for 24 hours
   };
 } else {
   getCache = hash => {
@@ -258,9 +249,7 @@ if (useRedisCache) {
 function printStats() {
   const connectedClients = wss.length();
   const tps = tpsCount / statTime;
-  logger.info(
-    `[Stats] Connected clients: ${connectedClients}; TPS Average: ${tps}`
-  );
+  logger.info(`[Stats] Connected clients: ${connectedClients}; TPS Average: ${tps}`);
   tpsCount = 0;
 }
 
